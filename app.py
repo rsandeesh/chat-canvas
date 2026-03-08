@@ -126,12 +126,24 @@ if st.session_state.df is not None:
             message_placeholder = st.empty()
             with st.spinner("Analyzing your data..."):
                 try:
+                    messages = [{"role": "system", "content": system_prompt}]
+
+                    for msg in st.session_state.messages[
+                        -6:
+                    ]:  # Include last 6 messages for context
+                        #Truncate long message in history to save tokens
+                        content = msg['content']
+                        if len(content) > 500:
+                            content = content[:500] + "..."
+                            
+                        messages.append(
+                            {"role": msg["role"], "content": content}
+                        )
+
+                    messages.append({"role": "user", "content": user_input})
                     response = client.chat.completions.create(
-                        model="gpt-4o",
-                        messages=[
-                            {"role": "system", "content": system_prompt},
-                            {"role": "user", "content": user_input},
-                        ],
+                        model="gpt-4.1",
+                        messages=messages,
                         temperature=0.1,
                         max_tokens=1500,
                     )
