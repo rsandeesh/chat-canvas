@@ -131,14 +131,12 @@ if st.session_state.df is not None:
                     for msg in st.session_state.messages[
                         -6:
                     ]:  # Include last 6 messages for context
-                        #Truncate long message in history to save tokens
-                        content = msg['content']
+                        # Truncate long message in history to save tokens
+                        content = msg["content"]
                         if len(content) > 500:
                             content = content[:500] + "..."
-                            
-                        messages.append(
-                            {"role": msg["role"], "content": content}
-                        )
+
+                        messages.append({"role": msg["role"], "content": content})
 
                     messages.append({"role": "user", "content": user_input})
                     response = client.chat.completions.create(
@@ -190,7 +188,7 @@ if st.session_state.df is not None:
                                 {"role": "assistant", "content": reply, "figure": fig}
                             )
                         else:
-                            st.session_state.message.appemd(
+                            st.session_state.messages.append(
                                 {
                                     "role": "assistant",
                                     "content": reply,
