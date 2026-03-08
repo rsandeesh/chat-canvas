@@ -71,6 +71,9 @@ if st.session_state.df is not None:
     for msg in st.session_state.messages:
         with st.chat_message(msg["role"]):
             st.markdown(msg["content"])
+            # Re-display any saved figures
+            if "figure" in msg:
+                st.pyplot(msg["figure"])
 
     # Chat input
     user_input = st.chat_input("Ask a question about your data")
@@ -171,8 +174,17 @@ if st.session_state.df is not None:
                         fig = plt.gcf()
                         if fig.get_axes():
                             st.pyplot(fig)
-
-                            plt.close()
+                            st.session_state.messages.append(
+                                {"role": "assistant", "content": reply, "figure": fig}
+                            )
+                        else:
+                            st.session_state.message.appemd(
+                                {
+                                    "role": "assistant",
+                                    "content": reply,
+                                }
+                            )
+                        plt.close()
                     except Exception as code_e:
                         error_type = type(code_e).__name__
                         st.error(f"Code execution failed: {error_type}")
@@ -218,3 +230,15 @@ else:
                     - Are there any outliers in the piece column?
                     """
         )
+
+# footer with tips
+st.markdown("---")
+st.markdown(
+    """
+<div style='text-align: center; color: gray; font-size: 12px;'>
+💡 Tip: Be specific with your questions for better results |
+🔒 Your data stays private and is not stored
+</div>
+""",
+    unsafe_allow_html=True,
+)
