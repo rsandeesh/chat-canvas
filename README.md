@@ -1,23 +1,32 @@
-# Build with AI: LLM-Powered Data Analysis App Using Python and Streamlit
-This is the repository for the LinkedIn Learning course `cBuild with AI: LLM-Powered Data Analysis App Using Python and Streamlit`. The full course is available from [LinkedIn Learning][lil-course-url].
+# Chat Canvas - Ask Your CSV
 
-![course-name-alt-text][lil-thumbnail-url] 
+An AI-powered data analysis app built with Python, Streamlit, and the OpenAI API. Upload a CSV file and ask questions about your data in plain English — the app generates and runs Python code to return insights and visualizations.
 
-## Course Description
+## Features
 
-<p>In this quick, hands-on course, learn to build a lightweight, AI-powered data analysis tool using Python, Streamlit, and the OpenAI API. Instructor Maggie Ma shows you how to upload a dataset and ask questions in plain English—your app will convert the input into code (Python or SQL), run it, and return useful insights. Perfect for technical teams looking to support non-technical stakeholders, this course takes you through building and testing a natural language interface for structured data. No prior experience with LLMs is needed—just Python and a bit of pandas—and you’ll finish the course with a working prototype you can expand or deploy internally.</p>
-<p>This course is integrated with GitHub Codespaces, an instant cloud developer environment that offers all the functionality of your favorite IDE without the need for any local machine setup. With GitHub Codespaces, you can get hands-on practice from any machine, at any time—all while using a tool that you’ll likely encounter in the workplace. Check out “GitHub Codespaces setup" with this course to learn how to get started.</p>
+- **CSV Upload** — Load any CSV and instantly preview rows, columns, memory usage, and missing values.
+- **Natural Language Queries** — Ask questions in plain English; the app converts them into pandas/matplotlib/seaborn code and executes it.
+- **Interactive Visualizations** — Automatically generates and displays charts from your data.
+- **Conversational Context** — Maintains chat history so you can ask follow-up questions.
 
-## Instructor
+## Tech Stack
 
-Maggie Ma
+- **Streamlit** — UI and chat interface
+- **OpenAI API (GPT-4.1)** — Natural language to code generation
+- **pandas** — Data manipulation
+- **matplotlib / seaborn** — Data visualization
 
+## Getting Started
 
-Geospatial Data Scientist | Founder | Tech Content Creator
-
-
-[0]: # (Replace these placeholder URLs with actual course URLs)
-
-[lil-course-url]: https://www.linkedin.com/learning/build-with-ai-llm-powered-data-analysis-app-with-python-and-streamlit
-[lil-thumbnail-url]: https://media.licdn.com/dms/image/v2/D4E0DAQHwJoNyLlzdmA/learning-public-crop_675_1200/B4EZk1wd5hHgAY-/0/1757543522591?e=2147483647&v=beta&t=shxtUvktyNL4jb868n9ML8mYwg9g6kOvc4Zm0RctZJI
-
+1. Install dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
+2. Add your OpenAI API key to `.streamlit/secrets.toml`:
+   ```toml
+   OPENAI_API_KEY = "sk-..."
+   ```
+3. Run the app:
+   ```bash
+   streamlit run app.py
+   ```
