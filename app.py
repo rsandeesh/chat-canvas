@@ -1,5 +1,10 @@
+import warnings
+
 import streamlit as st
 import pandas as pd
+import openai
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 
 st.set_page_config(
@@ -7,6 +12,9 @@ st.set_page_config(
     page_icon="📊",
     layout="wide",
 )
+
+# Initialize OpenAI client
+client = openai.OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
 st.title("📊 Ask your CSV")
 st.markdown("Upload your data and ask questions in plain English!")
@@ -72,6 +80,128 @@ if st.session_state.df is not None:
 
         with st.chat_message("user"):
             st.markdown(user_input)
+
+        # Prepare data context with token optimization
+        df = st.session_state.df
+        if len(df) > 100:
+            data_context = f"""
+            Dataset shape: {st.session_state.data_summary['shape']}
+            Columns: {', '.join(st.session_state.data_summary['columns'])}
+            Data types: {st.session_state.data_summary['dtypes']}
+            Sample rows: {st.session_state.data_summary['sample']}
+            Basic statistics: {st.session_state.data_summary['stats']}
+            """
+        else:
+            data_context = f"""
+            Full dataset:
+            {df.to_string()}
+            """
+
+        system_prompt = f""" You are a helpful data analyst assistant. 
+        
+        The user has uploaded a CSV file with the following information: {data_context}
+        
+        The data is loaded into a pandas Datafrom called 'df'. 
+        
+        Guidelines:
+        - Answer the user's question clearly and concisely.
+        - If the question requires analysis, write Python code using pandas, matplotlib, or seaborn
+        - For visualizations, always use plt.figure() before plotting and include plt.tight_layout() after to ensure proper formatting.
+        - Always validate data before operations (check for nulls, data types, etc.)
+        - If you can't answer due to data limitations, explain why
+        - Keep responses focused on the data and questions asked
+        
+        When writing code:
+        - Import statements are already done (pandas as pd, matplotlib.pyplot as plt, seaborn as sns)
+        - The dataframe is available as 'df'
+        - For plots, use plt.figure(figsize=(10,6)) for better display
+        - Always add titles and labels to plots
+        """
+
+        # Generate response
+        with st.chat_message("assistant"):
+            message_placeholder = st.empty()
+            with st.spinner("Analyzing your data..."):
+                try:
+                    response = client.chat.completions.create(
+                        model="gpt-4o",
+                        messages=[
+                            {"role": "system", "content": system_prompt},
+                            {"role": "user", "content": user_input},
+                        ],
+                        temperature=0.1,
+                        max_tokens=1500,
+                    )
+                    reply = response.choices[0].message.content
+                    message_placeholder.markdown(reply)
+                    # Save assistant response to chat history
+                    st.session_state.messages.append(
+                        {"role": "assistant", "content": reply}
+                    )
+
+                    # try to execute any code in the response
+                    if "```python" in reply:
+                        code_blocks = reply.split("```python")
+                        for i in range(1, len(code_blocks)):
+                            code = code_blocks[i].split("```")[0]
+                    try:
+                        # Display warnings if any
+                        with warnings.catch_warnings(record=True) as w:
+                            warnings.simplefilter("always")
+                        # Create figure for potential plots
+                        plt.figure(figsize=(10, 6))
+
+                        exec_globals = {
+                            "df": df,
+                            "pd": pd,
+                            "plt": plt,
+                            "sns": sns,
+                            "st": st,
+                        }
+                        exec(code.strip(), exec_globals)
+
+                        # Display any warnings that were raised during code execution
+                        if w:
+                            for warning in w:
+                                st.warning(
+                                    f"Warning during code execution: {str(warning.message)}"
+                                )
+
+                        # Display plot if created
+                        fig = plt.gcf()
+                        if fig.get_axes():
+                            st.pyplot(fig)
+
+                            plt.close()
+                    except Exception as code_e:
+                        error_type = type(code_e).__name__
+                        st.error(f"Code execution failed: {error_type}")
+
+                        # Provide helpful context based on error type
+                        if "NameError" in str(code_e):
+                            st.info(
+                                "This might mean a column name is misspelled or doesn't exist in the dataset."
+                            )
+                        elif "TypeError" in str(code_e):
+                            st.info(
+                                "This often happens when trying to plot non-numeric data"
+                            )
+                        elif "KeyError" in str(code_e):
+                            st.info(
+                                "The specific column might not exist in your dataset."
+                            )
+                        else:
+                            st.info(
+                                "Try rephrasing your question or check your data format."
+                            )
+
+                except openai.APIError as api_e:
+                    st.error(f"OPENAI API error: {str(api_e)}")
+                    st.info("Please check your API key and try again.")
+
+                except Exception as e:
+                    st.error(f"Error generating response: {str(e)}")
+                    st.info("Please try again or rephrase your question.")
 else:
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
